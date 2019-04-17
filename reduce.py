@@ -7,11 +7,11 @@ Created on 27 mar. 2019
 from COSBackend import CosBackend
 import json
 
-
+#Joins two dictionaries
 def joinDictionary (dictionary1,dictionary2 ):
-    dictionaryJoin= dict(dictionary1, **dictionary2 ) #Join de los diccionarios - si k esta en los 2, valor del segundo
+    dictionaryJoin= dict(dictionary1, **dictionary2 ) 
     for k, v in dictionary1.items():
-        if (dictionary2.__contains__(k)):    #Si esta en los dos diccionarios actualizar valor en el join con la suma de valores
+        if (dictionary2.__contains__(k)):
             dictionaryJoin.update({k:v+dictionary2.get(k)})
     return dictionaryJoin
 
@@ -24,8 +24,10 @@ def main(arg1):
     for elem in headerlist:
         tempFiles.append(elem.get('Key'))
     
-    carry=''
-    #for elem in tempFiles:
+    carry='' #Carry will represent the leftover word chunk from last mapped fragment
+    
+    #Due to IBM COS changing the order of files, we can't use a for_in loop.
+    #Otherwise the cut words between blocks would be lost
     counter=0
     while (counter<len(tempFiles)):
         currentfilename=arg1.get('prefix')+str(counter)
@@ -48,7 +50,7 @@ def main(arg1):
         a.delete(arg1.get('bucket'), currentfilename)
         counter+=1
     
-    #final check (in case the text ends without a punctuation mark/whitespace/line break!)
+    #final check (in case the text ends without a punctuation sign/whitespace/line break and the carry can't be properly joined!)
     if carry:
         if arg1.get('op')=='count':
             finalresult['words']+=1

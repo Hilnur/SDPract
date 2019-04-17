@@ -4,16 +4,19 @@ Created on 27 mar. 2019
 @author: Maite Bernaus
 @author: David Fernandez
 '''
-
-#from Funcions.CloudFunctions import CloudFunctions
+#necessary imports
 import yaml
 import time
 from os.path import expanduser
+from ibm_cf_connector import CloudFunctions
 
+#imports for linear testing
+'''
 import mapper
 import reduce
-from ibm_cf_connector import CloudFunctions
 from COSBackend import CosBackend
+'''
+
 
 #Reads cloud function credentials from config file
 def readParamsCloudF ():
@@ -56,7 +59,6 @@ def main(filename, nchunks, op):
     configIBMCloud=readParamsCloudF()
     configCOS= readParamsCOS()
     functionbackend = CloudFunctions(configIBMCloud)
-    Backend=CosBackend(configCOS)
 
     #Preparing dictionaries to serve as function arguments
     argsOriginal = {}
@@ -93,20 +95,27 @@ def main(filename, nchunks, op):
         
         argsTemp['targetFile']='temp'+str(chunkCounter)
         #invoke mapper
-        mapper.main(argsTemp)
+        #mapper.main(argsTemp)  #discomment this for linear mapping (requires mapper.py)
+        functionbackend.invoke('Map', argsTemp)
         currentByte=currentByte+chunkSize+1
         chunkCounter+=1
     
     print('All chunks sent. Waiting for results...')
     listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
-    
-    while(len(listObjects)<chunkCounter):
-        time.sleep(2)
+    while(len(listObjects)<nchunks):
+        time.sleep(1)
         listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
-    result=reduce.main({'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})    
+    print(listObjects)
+    #result=reduce.main({'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
+    
+    #result={}
+    print('we got here')
+    result=functionbackend.invoke_with_result('Reduce', {'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
+    print('also here')
     return result
 
-
+#VARIOUS TEST CODES - COMMENT AND DISCOMMENT FOR TESTING
+'''
 configIBMCloud=readParamsCloudF()
 configCOS= readParamsCOS()
 functionbackend = CloudFunctions(configIBMCloud)
@@ -129,9 +138,9 @@ print ("Also, length by split is "+str(len((data).split())))
 #test3= json.loads(test2)
 #print(test3)
 
-test6=main('lorem.txt', 10, 'count')
+test6=main('lorem.txt', 10, 'diffcount')
 print(test6)
-'''
+
 for elem in test6.keys():
     if elem not in test1:
         print(elem)
@@ -141,5 +150,3 @@ for elem in test1.keys():
     if elem not in test6:
         print(elem)
 '''
-#data = backend.get_object('originals', 'lorem.txt', extra_get_args={'Range':'bytes='+str(0)+'-'+str(200)})
-#print(data)

@@ -7,7 +7,7 @@ Created on 27 mar. 2019
 
 from COSBackend import CosBackend
 import json
-
+#Performs a two-step split to use mutliple delimiters in one invocation
 def splitText( text ):
     for char in '=-.,\n!?,':
         text=text.replace(char,' ')
@@ -17,6 +17,7 @@ def splitText( text ):
         
     return word_list
 
+#Counts total number of words
 def countingWords(data):
     word_list = splitText(data)
     dictionary={'lastBlock':'', 'firstBlock':''}
@@ -30,8 +31,8 @@ def countingWords(data):
     dictionary['words']=len(word_list)
     return dictionary
 
+#Counts all instances of each word
 def wordCount (data):
-    
     word_list = splitText(data)
     dictionary ={'lastBlock':'', 'firstBlock':''}
     if data[-1].isalpha():
