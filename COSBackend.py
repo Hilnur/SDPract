@@ -7,31 +7,20 @@ Created on 6 mar. 2019
 
 import ibm_boto3
 import ibm_botocore
-import yaml
-#from aifc import data
 
 
-def COSReadParams ():
-    with open('ibm-cloud_config', 'r') as config_file:  #canviarho a path usuari
-        res = yaml.safe_load(config_file)
-    config = {}
-    config['ibm_cos_endpoint']= res['ibm_cos']['endpoint']
-    config['ibm_cos_access_key']  = res['ibm_cos']['access_key']
-    config['ibm_cos_secret_key']  = res['ibm_cos']['secret_key']
-    
-    return config
 
 class CosBackend:
     def __init__(self, args):
         client_config = ibm_botocore.client.Config(max_pool_connections=200)
       
+   
         self.cos_client = ibm_boto3.client('s3',
                                            aws_access_key_id=args.get('ibm_cos_access_key'),
                                            aws_secret_access_key=args.get ('ibm_cos_secret_key'),
                                            config=client_config,
                                            endpoint_url=args.get('ibm_cos_endpoint'))
         
-    
     def put_object(self, bucket_name,key,data):
         try:
             res = self.cos_client.put_object(Bucket=bucket_name, Key=key, Body=data)
@@ -74,7 +63,7 @@ class CosBackend:
                 print("Bucket Name: {0}".format(bucket.name))
         except Exception as e:
             print("Unable to retrieve list buckets: {0}".format(e))
-            
+    
     def list_objects(self, bucket_name, prefix=None):
         paginator=self.cos_client.get_paginator('list_objects_v2')
         try:
@@ -90,5 +79,4 @@ class CosBackend:
                         object_list.append(item)
             return object_list
         except ibm_botocore.exceptions.ClientError as e:
-            raise e
-        
+            raise e 

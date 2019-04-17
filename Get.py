@@ -6,14 +6,12 @@ Created on 13 mar. 2019
 '''
 
 from COSBackend import CosBackend
-
-def main(arg1):
-    filename=arg1.get('filename')
-    a=CosBackend()
-    data = a.get_object('hilnurtest2', filename)
+        
+def getObject(arg1):
+    
+    filename= arg1.get('filename')
+    a=CosBackend(arg1.get('configCOS'))
+    data=a.get_object(arg1.get('bucket'), filename, extra_get_args= {'Range':'bytes='+str(arg1.get('startbyte'))+'-'+str(arg1.get('endbyte'))})
     return {'content':data}
 
-'''
-a=CosBackend()
-print(a.list_objects('hilnurtest2'))
-'''
+

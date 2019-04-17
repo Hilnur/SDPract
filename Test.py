@@ -5,9 +5,9 @@ Created on 11 mar. 2019
 @author: Maite Bernaus
 '''
 from COSBackend import CosBackend
-import Put
 
-if __name__ == 'Get':
+
+def main():
     
     '''
     f=open("prueba.txt")
@@ -17,4 +17,11 @@ if __name__ == 'Get':
     #a.get_buckets()
     f.close()
     '''
-    #Put.main({'filename':'prueba.txt'})
+    a=1222
+    b=5
+    
+    print(a//b)
+    
+
+main()
+#Put.main({'filename':'prueba.txt'})
