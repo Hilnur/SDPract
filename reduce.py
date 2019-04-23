@@ -27,7 +27,8 @@ def main(arg1):
     carry='' #Carry will represent the leftover word chunk from last mapped fragment
     
     #Due to IBM COS changing the order of files, we can't use a for_in loop.
-    #Otherwise the cut words between blocks would be lost
+    #Otherwise the cut words between blocks would be lost, as order of blocks would be
+    #shifted
     counter=0
     while (counter<len(tempFiles)):
         currentfilename=arg1.get('prefix')+str(counter)
@@ -38,9 +39,9 @@ def main(arg1):
                 current['words']+=1
             elif (arg1.get('op')=='diffcount'):
                 bridgeword=carry+current.get('firstBlock')
-                print(bridgeword)
+                #print(bridgeword)
                 finalresult=joinDictionary(finalresult, {bridgeword:1})
-                print(finalresult)
+                #print(finalresult)
         
         carry=current.get('lastBlock')
         del current['firstBlock']

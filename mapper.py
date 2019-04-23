@@ -55,9 +55,11 @@ def main(arg1):
     byteend=arg1.get('endbyte')
     op=arg1.get('op')
     
+    #obtain bytes from start to end (chunk)
     a=CosBackend(arg1.get('configCOS'))
     data = a.get_object(source_bucket, source_file, extra_get_args={'Range':'bytes='+str(bytestart)+'-'+str(byteend)})
     
+    #decode bytes to a string
     data=data.decode('utf-8-sig')
 
     if op=='diffcount':

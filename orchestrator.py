@@ -6,6 +6,7 @@ Created on 27 mar. 2019
 '''
 #necessary imports
 import yaml
+from datetime import datetime
 import time
 from os.path import expanduser
 from ibm_cf_connector import CloudFunctions
@@ -16,7 +17,6 @@ import mapper
 import reduce
 from COSBackend import CosBackend
 '''
-
 
 #Reads cloud function credentials from config file
 def readParamsCloudF ():
@@ -29,7 +29,8 @@ def readParamsCloudF ():
         config['api_key']  = res['ibm_cf']['api_key']
         return config
     except :
-        print('Error readParamsCloudF')
+        print('There was an error while reading the IBM Functions config file. Please make sure the file exists and is located in your user directory')
+        exit(1)
 
 #reads COS credentials from config file
 def readParamsCOS ():
@@ -43,22 +44,27 @@ def readParamsCOS ():
         
         return config 
     except :
-        print('Error readParamsCOS')
+        print('There was an error while reading the IBM Functions config file. Please make sure the file exists and is located in your user directory')
+        exit(1)
 
 
 def main(filename, nchunks, op):
+    #Time measurement begin (for testing)
+    i_time=datetime.now()
+    
     #Checking parameters
     if op not in ['count', 'diffcount']:
-        print("Valid operators are count (total number of words) or diffcount (count amounts of each individual word)")
+        print("Valid operators are count (total number of words) or diffcount (counts amounts of each individual word)")
         exit(1)
     if nchunks < 1:
-        print("number of parallel processes needs to be a positive integer!")
+        print("Number of parallel processes must be a positive integer!")
         exit(1)
         
     #Reading config files and preparing the function backend
     configIBMCloud=readParamsCloudF()
     configCOS= readParamsCOS()
     functionbackend = CloudFunctions(configIBMCloud)
+    ##cosbackend = CosBackend(configCOS)
 
     #Preparing dictionaries to serve as function arguments
     argsOriginal = {}
@@ -80,6 +86,7 @@ def main(filename, nchunks, op):
         exit(1)
     sizeFile = int(headers.get('content-length'))
 
+    #Begin chunking
     print('All parameters obtained. Beginning chunking')
     currentByte=0
     chunkCounter =0 
@@ -94,24 +101,29 @@ def main(filename, nchunks, op):
             argsTemp['endbyte']=currentByte+chunkSize
         
         argsTemp['targetFile']='temp'+str(chunkCounter)
-        #invoke mapper
-        #mapper.main(argsTemp)  #discomment this for linear mapping (requires mapper.py)
+        ##mapper.main(argsTemp)  #discomment this for linear mapping (requires mapper.py)
         functionbackend.invoke('Map', argsTemp)
         currentByte=currentByte+chunkSize+1
         chunkCounter+=1
     
+    #Wait until all mappers have finished (all temp files created)
     print('All chunks sent. Waiting for results...')
+    ##listObjects=cosbackend.list_objects('temp1')
     listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
     while(len(listObjects)<nchunks):
         time.sleep(1)
         listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
-    print(listObjects)
+        ##listObjects=cosbackend.list_objects('temp1')
+        
+    #Begin reduction
     #result=reduce.main({'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
-    
-    #result={}
-    print('we got here')
     result=functionbackend.invoke_with_result('Reduce', {'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
-    print('also here')
+    
+    #time measurement end and printing (for reference)
+    f_time=datetime.now()
+    print('Total elapsed time='+str(f_time-i_time))
+    
+    #function end
     return result
 
 #VARIOUS TEST CODES - COMMENT AND DISCOMMENT FOR TESTING
@@ -121,6 +133,11 @@ configCOS= readParamsCOS()
 functionbackend = CloudFunctions(configIBMCloud)
 backend=CosBackend(configCOS)
 
+f=open('big.txt', mode='r', encoding='utf-8-sig')
+data=f.read()
+backend.put_object('originals', 'big.txt', data)
+'''
+'''
 f=open('lorem.txt', mode='r', encoding='utf-8-sig')
 data=f.read()
 #print(len(data2))
