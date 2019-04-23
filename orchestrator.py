@@ -11,11 +11,13 @@ import time
 from os.path import expanduser
 from ibm_cf_connector import CloudFunctions
 
+import json
+
 #imports for linear testing
 '''
+from COSBackend import CosBackend
 import mapper
 import reduce
-from COSBackend import CosBackend
 '''
 
 #Reads cloud function credentials from config file
@@ -64,7 +66,6 @@ def main(filename, nchunks, op):
     configIBMCloud=readParamsCloudF()
     configCOS= readParamsCOS()
     functionbackend = CloudFunctions(configIBMCloud)
-    ##cosbackend = CosBackend(configCOS)
 
     #Preparing dictionaries to serve as function arguments
     argsOriginal = {}
@@ -101,7 +102,7 @@ def main(filename, nchunks, op):
             argsTemp['endbyte']=currentByte+chunkSize
         
         argsTemp['targetFile']='temp'+str(chunkCounter)
-        ##mapper.main(argsTemp)  #discomment this for linear mapping (requires mapper.py)
+        #mapper.main(argsTemp)  #discomment this for linear mapping (requires mapper.py)
         functionbackend.invoke('Map', argsTemp)
         currentByte=currentByte+chunkSize+1
         chunkCounter+=1
@@ -116,14 +117,19 @@ def main(filename, nchunks, op):
         ##listObjects=cosbackend.list_objects('temp1')
         
     #Begin reduction
+    print('Mapping complete. Proceed to reduction')
     #result=reduce.main({'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
-    result=functionbackend.invoke_with_result('Reduce', {'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
-    
+    functionbackend.invoke_with_result('Reducer', {'bucket':'temps1', 'configCOS':configCOS, 'op':op, 'prefix':'temp'})
+    result=(functionbackend.invoke_with_result('GetObject', {'bucket':'temps1', 'configCOS':configCOS, 'filename':'resultados'})).get('content')
+    result=json.loads(result)
+
     #time measurement end and printing (for reference)
     f_time=datetime.now()
     print('Total elapsed time='+str(f_time-i_time))
     
-    #function end
+    #cleanup
+    functionbackend.invoke('Delete', {'bucket':'temps1', 'configCOS':configCOS, 'filename':'resultados'})
+    
     return result
 
 #VARIOUS TEST CODES - COMMENT AND DISCOMMENT FOR TESTING

@@ -39,15 +39,14 @@ def main(arg1):
                 current['words']+=1
             elif (arg1.get('op')=='diffcount'):
                 bridgeword=carry+current.get('firstBlock')
-                #print(bridgeword)
                 finalresult=joinDictionary(finalresult, {bridgeword:1})
-                #print(finalresult)
         
         carry=current.get('lastBlock')
         del current['firstBlock']
         del current['lastBlock']
         
         finalresult=joinDictionary(finalresult, current)
+        a.put_object('temps2', currentfilename, json.dumps(finalresult))
         a.delete(arg1.get('bucket'), currentfilename)
         counter+=1
     
@@ -58,4 +57,8 @@ def main(arg1):
         elif arg1.get('op')=='diffcount':
             finalresult=joinDictionary(finalresult, {carry:1})
     #Program over, return result
-    return finalresult
+    #We quickly ran into an error where IBM Functions was unable to return a dictionary with too many separate entries. To avoid this issue, 
+    #we will save the final results to COS and return an empty dictionary
+    a.put_object('temps1', 'resultados', json.dumps(finalresult))
+    
+    return {}
