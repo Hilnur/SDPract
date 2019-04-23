@@ -72,5 +72,5 @@ def main(arg1):
     result=func(data)
     a.put_object(target_bucket, target, json.dumps(result))
     
-    #Since all functions must return a dictionary, we return an empty one
-    return {}
+    #Since all functions must return a dictionary, we return a simple okay message
+    return {'result':'okay'}

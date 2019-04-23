@@ -58,7 +58,7 @@ def main(arg1):
             finalresult=joinDictionary(finalresult, {carry:1})
     #Program over, return result
     #We quickly ran into an error where IBM Functions was unable to return a dictionary with too many separate entries. To avoid this issue, 
-    #we will save the final results to COS and return an empty dictionary
+    #we will save the final results to COS and just return an "okay" message
     a.put_object('temps1', 'resultados', json.dumps(finalresult))
     
-    return {}
+    return {'result':'okay'}

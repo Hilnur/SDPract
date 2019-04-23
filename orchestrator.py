@@ -111,10 +111,20 @@ def main(filename, nchunks, op):
     print('All chunks sent. Waiting for results...')
     ##listObjects=cosbackend.list_objects('temp1')
     listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
+    timeout=0
     while(len(listObjects)<nchunks):
-        time.sleep(1)
+        time.sleep(0.1)
         listObjects= (functionbackend.invoke_with_result('ListObjects', { 'bucket': 'temps1' , 'configCOS': configCOS})).get('files')
-        ##listObjects=cosbackend.list_objects('temp1')
+        timeout+=1
+        if (timeout>600):
+            #Note: We discovered that with files that had specific complex UTF characters, there's a chance that the split will accidentally break up multi-byte
+            #characters between two mappers, leaving both mappers confused and unable to return valid results. Therefore, the program assumes
+            #that if a full minute goes by without changes, the mappers are probably stuck and the execution has failed
+            print('Program timed out - Mapper found an issue. Please check the encoding in your file!')
+            print('Please wait while we clean up temp files...')
+            for elem in listObjects: functionbackend.invoke('Delete', {'bucket':'temps1', 'configCOS':configCOS, 'filename':elem})
+            print('All files cleaned up. Exiting program.')
+            exit(1)
         
     #Begin reduction
     print('Mapping complete. Proceed to reduction')
@@ -132,6 +142,7 @@ def main(filename, nchunks, op):
     
     return result
 
+main('big.txt', 10, 'diffcount')
 #VARIOUS TEST CODES - COMMENT AND DISCOMMENT FOR TESTING
 '''
 configIBMCloud=readParamsCloudF()
